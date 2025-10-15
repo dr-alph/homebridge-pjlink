@@ -1,8 +1,6 @@
 import type {
   Logger,
   API,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
   CharacteristicValue,
   AccessoryConfig,
   PlatformAccessory,
@@ -47,8 +45,8 @@ export class InputSourceHandler {
 
     this.tvService
       .getCharacteristic(Characteristic.ActiveIdentifier)
-      .on(CharacteristicEventTypes.GET, this.getActiveIdentifier.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setActiveIdentifier.bind(this));
+      .onGet(this.getActiveIdentifier.bind(this))
+      .onSet(this.setActiveIdentifier.bind(this));
   }
 
   private getInputSources(configured) {
@@ -114,10 +112,7 @@ export class InputSourceHandler {
 
       inputSource
         .getCharacteristic(this.api.hap.Characteristic.ConfiguredName)
-        .on(
-          this.api.hap.CharacteristicEventTypes.SET,
-          this.setConfiguredInputSourceName.bind(this, identifier)
-        );
+        .onSet(this.setConfiguredInputSourceName.bind(this, identifier));
 
       if (input.code === this.defaultInput) {
         this.activeIdentifier = identifier;
@@ -132,48 +127,59 @@ export class InputSourceHandler {
     });
   }
 
-  private getActiveIdentifier(callback: CharacteristicGetCallback): void {
+  private async getActiveIdentifier(): Promise<CharacteristicValue> {
     this.log.info('get active identifier', this.activeIdentifier);
-    callback(null, this.activeIdentifier);
+    return this.activeIdentifier;
   }
 
-  private setActiveIdentifier(
-    value: CharacteristicValue,
-    callback: CharacteristicSetCallback
-  ): void {
-    try {
-      this.log.info('set active identifier', value);
+  private async setActiveIdentifier(
+    value: CharacteristicValue
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.log.info('set active identifier', value);
 
-      let activeInput: Input | null = null;
-      for (let i = 0; i < this.inputs.length; i++) {
-        const input = this.inputs[i];
-        if (input.code === value) {
-          activeInput = input;
+        let activeInput: Input | null = null;
+        for (let i = 0; i < this.inputs.length; i++) {
+          const input = this.inputs[i];
+          if (input.code === value) {
+            activeInput = input;
+          }
+        }
+
+        if (activeInput !== null) {
+          this.device.setInput(activeInput, (error?: string) => {
+            if (error) {
+              // Silently ignore "Unavailable time" errors when device is off
+              if (error.includes('Unavailable time')) {
+                resolve();
+              } else {
+                reject(new Error(error));
+              }
+            } else {
+              resolve();
+            }
+          });
+        } else {
+          resolve();
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+          this.log.error(e.message);
+          reject(e);
         }
       }
-
-      if (activeInput !== null) {
-        this.device.setInput(activeInput, (error?: string) => {
-          if (error) {
-            callback(new Error(error));
-          } else {
-            callback();
-          }
-        });
-      }
-    } catch (e) {
-      if (e instanceof Error) {
-        this.log.error(e.message);
-        callback(e);
-      }
-    }
+    });
   }
 
   public update(): void {
     try {
       this.device.getInput((error?: string, input?: Input) => {
         if (error) {
-          this.log.error(error);
+          // Silently ignore "Unavailable time" errors when device is off
+          if (!error.includes('Unavailable time')) {
+            this.log.error(error);
+          }
         } else {
           if (input && input.code !== this.activeIdentifier) {
             this.activeIdentifier = input.code;
@@ -216,15 +222,12 @@ export class InputSourceHandler {
     }
   }
 
-  private setConfiguredInputSourceName(
+  private async setConfiguredInputSourceName(
     inputIdentifier: string,
-    value: CharacteristicValue,
-    callback: CharacteristicSetCallback
-  ) {
+    value: CharacteristicValue
+  ): Promise<void> {
     this.log.info('Set input value', inputIdentifier, value);
 
     // this.accessory.context.inputLabels[inputIdentifier] = value;
-
-    callback();
   }
 }

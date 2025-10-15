@@ -1,8 +1,6 @@
 import type {
   Logger,
   API,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
   CharacteristicValue,
   PlatformAccessory,
   Service,
@@ -47,53 +45,66 @@ export class TelevisionSpeakerHandler {
 
     service
       .getCharacteristic(Characteristic.Mute)
-      .on(CharacteristicEventTypes.GET, this.getTelevisionMuted.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setTelevisionMuted.bind(this));
+      .onGet(this.getTelevisionMuted.bind(this))
+      .onSet(this.setTelevisionMuted.bind(this));
 
     this.tvService.addLinkedService(service);
 
     return service;
   }
 
-  private getTelevisionMuted(callback: CharacteristicGetCallback): void {
-    try {
-      this.device.getMute((err: string | undefined, state: MuteState) => {
-        if (err) {
-          this.log.error(err);
-          callback(new Error(err));
-        } else {
-          this.log.info('muted', state);
-          callback(null, state.audio);
+  private async getTelevisionMuted(): Promise<CharacteristicValue> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.device.getMute((err: string | undefined, state: MuteState) => {
+          if (err) {
+            // Silently ignore "Unavailable time" errors when device is off
+            if (err.includes('Unavailable time')) {
+              resolve(this.muted);
+            } else {
+              this.log.error(err);
+              reject(new Error(err));
+            }
+          } else {
+            this.log.info('muted', state);
+            resolve(state.audio);
+          }
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          this.log.error(e.message);
+          reject(e);
         }
-      });
-    } catch (e) {
-      if (e instanceof Error) {
-        this.log.error(e.message);
-        callback(e);
       }
-    }
+    });
   }
 
-  private setTelevisionMuted(
-    value: CharacteristicValue,
-    callback: CharacteristicSetCallback
-  ): void {
-    try {
-      const muted = value === true;
-      this.device.setMute(muted, (err: string | undefined, resp) => {
-        this.log.info('setMute', muted, err, resp);
-        if (err) {
-          callback(new Error(err));
-        } else {
-          callback();
+  private async setTelevisionMuted(
+    value: CharacteristicValue
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        const muted = value === true;
+        this.device.setMute(muted, (err: string | undefined, resp) => {
+          this.log.info('setMute', muted, err, resp);
+          if (err) {
+            // Silently ignore "Unavailable time" errors when device is off
+            if (err.includes('Unavailable time')) {
+              resolve();
+            } else {
+              reject(new Error(err));
+            }
+          } else {
+            resolve();
+          }
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          this.log.error(e.message);
+          reject(e);
         }
-      });
-    } catch (e) {
-      if (e instanceof Error) {
-        this.log.error(e.message);
-        callback(e);
       }
-    }
+    });
   }
 
   public update(): void {
@@ -102,7 +113,10 @@ export class TelevisionSpeakerHandler {
     try {
       this.device.getMute((err: string | undefined, state: MuteState) => {
         if (err) {
-          this.log.error(err);
+          // Silently ignore "Unavailable time" errors when device is off
+          if (!err.includes('Unavailable time')) {
+            this.log.error(err);
+          }
         } else {
           this.log.info('muted', state);
           if (state.audio !== this.muted) {
