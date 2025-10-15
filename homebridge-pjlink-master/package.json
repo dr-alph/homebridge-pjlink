@@ -1,0 +1,53 @@
+{
+  "name": "homebridge-pjlink",
+  "version": "1.0.7-beta.0",
+  "description": "Homebridge accessory for PJLink supported projectors",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint src/**.ts",
+    "fix": "eslint --fix src/**.ts",
+    "watch": "npm run build && npm link && nodemon",
+    "clean": "rimraf ./dist",
+    "build": "npm run clean && tsc",
+    "prepublishOnly": "npm run lint && npm audit && npm run build",
+    "postpublish": "git push",
+    "publish-beta": "npm version prepatch --preid beta && npm publish --tag=beta"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emptygalaxy/homebridge-pjlink.git"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "pjlink"
+  ],
+  "author": "Nick Timman",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emptygalaxy/homebridge-pjlink/issues"
+  },
+  "homepage": "https://github.com/emptygalaxy/homebridge-pjlink#readme",
+  "dependencies": {
+    "pjlink": "^0.2.8"
+  },
+  "engines": {
+    "homebridge": "^1.8.0 || ^2.0.0-beta.0",
+    "node": "^18.20.0 || ^20.0.0 || ^22.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "homebridge": "^1.8.0",
+    "nodemon": "^3.0.0",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.0"
+  }
+}
