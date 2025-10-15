@@ -129,7 +129,7 @@ export class InputSourceHandler {
 
   private async getActiveIdentifier(): Promise<CharacteristicValue> {
     this.log.info('get active identifier', this.activeIdentifier);
-    return this.activeIdentifier;
+    return this.activeIdentifier || this.defaultInput;
   }
 
   private async setActiveIdentifier(
