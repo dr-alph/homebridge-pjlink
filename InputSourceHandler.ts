@@ -150,12 +150,16 @@ export class InputSourceHandler {
         if (activeInput !== null) {
           this.device.setInput(activeInput, (error?: string) => {
             if (error) {
+<<<<<<< HEAD
+              reject(new Error(error));
+=======
               // Silently ignore "Unavailable time" errors when device is off
               if (error.includes('Unavailable time')) {
                 resolve();
               } else {
                 reject(new Error(error));
               }
+>>>>>>> origin/main
             } else {
               resolve();
             }

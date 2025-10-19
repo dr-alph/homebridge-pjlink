@@ -1,8 +1,6 @@
 import type {
   Logger,
   API,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
   CharacteristicValue,
   PlatformAccessory,
   Service,
@@ -49,11 +47,11 @@ export class TelevisionHandler {
       );
     tvService
       .getCharacteristic(Characteristic.Active)
-      .on(CharacteristicEventTypes.GET, this.getTelevisionActive.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setTelevisionActive.bind(this));
+      .onGet(this.getTelevisionActive.bind(this))
+      .onSet(this.setTelevisionActive.bind(this));
     tvService
       .getCharacteristic(this.api.hap.Characteristic.RemoteKey)
-      .on(CharacteristicEventTypes.SET, this.setRemoteKey.bind(this));
+      .onSet(this.setRemoteKey.bind(this));
 
     return tvService;
   }
@@ -69,8 +67,8 @@ export class TelevisionHandler {
       this.accessory.addService(Service.Switch, this.name);
     service
       .getCharacteristic(Characteristic.On)
-      .on(CharacteristicEventTypes.GET, this.getTelevisionActive.bind(this))
-      .on(CharacteristicEventTypes.SET, this.setTelevisionActive.bind(this));
+      .onGet(this.getTelevisionActive.bind(this))
+      .onSet(this.setTelevisionActive.bind(this));
 
     return service;
   }
@@ -85,84 +83,96 @@ export class TelevisionHandler {
 
   /**
    * Get television active
-   * @param callback
    */
-  private getTelevisionActive(callback: CharacteristicGetCallback): void {
-    try {
-      this.device.getPowerState((error: string | undefined, state) => {
-        if (error) {
-          this.log.error(error);
-          callback(new Error(error));
-        } else {
-          this.deviceActive = state === PJLink.POWER.ON;
-          this.log.info('television active', this.deviceActive);
-          callback(null, this.deviceActive);
+  private async getTelevisionActive(): Promise<CharacteristicValue> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.device.getPowerState((error: string | undefined, state) => {
+          if (error) {
+            // Silently ignore "Unavailable time" errors when device is off
+            if (error.includes('Unavailable time')) {
+              resolve(this.deviceActive);
+            } else {
+              this.log.error(error);
+              reject(new Error(error));
+            }
+          } else {
+            this.deviceActive = state === PJLink.POWER.ON;
+            this.log.info('television active', this.deviceActive);
+            resolve(this.deviceActive);
+          }
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          this.log.error(e.message);
+          reject(e);
         }
-      });
-    } catch (e) {
-      if (e instanceof Error) {
-        this.log.error(e.message);
-        callback(e);
       }
-    }
+    });
   }
 
   /**
    * Set television active
    * @param {boolean} value
-   * @param callback
    */
-  private setTelevisionActive(
-    value: CharacteristicValue,
-    callback: CharacteristicSetCallback
-  ): void {
+  private async setTelevisionActive(
+    value: CharacteristicValue
+  ): Promise<void> {
     // hap
     const Characteristic = this.api.hap.Characteristic;
 
-    try {
-      const powerState =
-        value === 1 || value === true ? PJLink.POWER.ON : PJLink.POWER.OFF;
-      this.device.setPowerState(powerState, (error?: string) => {
-        this.log.info('setPowerState', value, powerState, error);
-        if (error) {
-          callback(new Error(error));
-        } else {
-          this.deviceActive = powerState === PJLink.POWER.ON;
-          callback();
-          this.tvService.updateCharacteristic(
-            Characteristic.Active,
-            this.deviceActive
-          );
-
-          if (this.switchService) {
-            this.switchService.updateCharacteristic(
-              Characteristic.On,
+    return new Promise((resolve, reject) => {
+      try {
+        const powerState =
+          value === 1 || value === true ? PJLink.POWER.ON : PJLink.POWER.OFF;
+        this.device.setPowerState(powerState, (error?: string) => {
+          this.log.info('setPowerState', value, powerState, error);
+          if (error) {
+            // Silently ignore "Unavailable time" errors when device is off
+            if (error.includes('Unavailable time')) {
+              resolve();
+            } else {
+              reject(new Error(error));
+            }
+          } else {
+            this.deviceActive = powerState === PJLink.POWER.ON;
+            this.tvService.updateCharacteristic(
+              Characteristic.Active,
               this.deviceActive
             );
+
+            if (this.switchService) {
+              this.switchService.updateCharacteristic(
+                Characteristic.On,
+                this.deviceActive
+              );
+            }
+            resolve();
           }
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          this.log.error(e.message);
+          reject(e);
         }
-      });
-    } catch (e) {
-      if (e instanceof Error) {
-        this.log.error(e.message);
-        callback(e);
       }
-    }
+    });
   }
 
-  private setRemoteKey(
-    value: CharacteristicValue,
-    callback: CharacteristicSetCallback
-  ): void {
+  private async setRemoteKey(
+    value: CharacteristicValue
+  ): Promise<void> {
     this.log.info('setRemoteKey', value);
-    callback();
   }
 
   public update(): void {
     try {
       this.device.getPowerState((error: string | undefined, state) => {
         if (error) {
-          this.log.error(error);
+          // Silently ignore "Unavailable time" errors when device is off
+          if (!error.includes('Unavailable time')) {
+            this.log.error(error);
+          }
         } else {
           const active = state === PJLink.POWER.ON;
           if (active !== this.deviceActive) {

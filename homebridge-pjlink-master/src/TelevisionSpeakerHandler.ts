@@ -58,18 +58,8 @@ export class TelevisionSpeakerHandler {
       try {
         this.device.getMute((err: string | undefined, state: MuteState) => {
           if (err) {
-<<<<<<< HEAD
             this.log.error(err);
             reject(new Error(err));
-=======
-            // Silently ignore "Unavailable time" errors when device is off
-            if (err.includes('Unavailable time')) {
-              resolve(this.muted);
-            } else {
-              this.log.error(err);
-              reject(new Error(err));
-            }
->>>>>>> origin/main
           } else {
             this.log.info('muted', state);
             resolve(state.audio);
@@ -93,16 +83,7 @@ export class TelevisionSpeakerHandler {
         this.device.setMute(muted, (err: string | undefined, resp) => {
           this.log.info('setMute', muted, err, resp);
           if (err) {
-<<<<<<< HEAD
             reject(new Error(err));
-=======
-            // Silently ignore "Unavailable time" errors when device is off
-            if (err.includes('Unavailable time')) {
-              resolve();
-            } else {
-              reject(new Error(err));
-            }
->>>>>>> origin/main
           } else {
             resolve();
           }
@@ -122,10 +103,7 @@ export class TelevisionSpeakerHandler {
     try {
       this.device.getMute((err: string | undefined, state: MuteState) => {
         if (err) {
-          // Silently ignore "Unavailable time" errors when device is off
-          if (!err.includes('Unavailable time')) {
-            this.log.error(err);
-          }
+          this.log.error(err);
         } else {
           this.log.info('muted', state);
           if (state.audio !== this.muted) {

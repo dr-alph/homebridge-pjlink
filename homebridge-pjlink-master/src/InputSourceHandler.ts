@@ -129,7 +129,7 @@ export class InputSourceHandler {
 
   private async getActiveIdentifier(): Promise<CharacteristicValue> {
     this.log.info('get active identifier', this.activeIdentifier);
-    return this.activeIdentifier || this.defaultInput;
+    return this.activeIdentifier;
   }
 
   private async setActiveIdentifier(
@@ -150,12 +150,7 @@ export class InputSourceHandler {
         if (activeInput !== null) {
           this.device.setInput(activeInput, (error?: string) => {
             if (error) {
-              // Silently ignore "Unavailable time" errors when device is off
-              if (error.includes('Unavailable time')) {
-                resolve();
-              } else {
-                reject(new Error(error));
-              }
+              reject(new Error(error));
             } else {
               resolve();
             }
@@ -176,10 +171,7 @@ export class InputSourceHandler {
     try {
       this.device.getInput((error?: string, input?: Input) => {
         if (error) {
-          // Silently ignore "Unavailable time" errors when device is off
-          if (!error.includes('Unavailable time')) {
-            this.log.error(error);
-          }
+          this.log.error(error);
         } else {
           if (input && input.code !== this.activeIdentifier) {
             this.activeIdentifier = input.code;
