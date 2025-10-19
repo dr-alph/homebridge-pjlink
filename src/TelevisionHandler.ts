@@ -7,7 +7,7 @@ import type {
 } from 'homebridge';
 import {CharacteristicEventTypes} from 'homebridge';
 // import {PJLink} from 'PJLink';
-const PJLink = require('pjlink');
+const PJLink = require('@daveralph/pjlink');
 
 export class TelevisionHandler {
   private readonly tvService: Service;

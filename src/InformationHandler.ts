@@ -1,6 +1,6 @@
 import type {Logger, API, Service, PlatformAccessory} from 'homebridge';
 // import {PJLink} from 'pjlink';
-const PJLink = require('pjlink');
+const PJLink = require('@daveralph/pjlink');
 import {PJLinkConfig} from './PJLinkPlatformConfig';
 
 export class InformationHandler {

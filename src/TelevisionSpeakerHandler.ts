@@ -6,7 +6,7 @@ import type {
   Service,
 } from 'homebridge';
 // import {PJLink} from 'pjlink';
-const PJLink = require('pjlink');
+const PJLink = require('@daveralph/pjlink');
 import {CharacteristicEventTypes} from 'homebridge';
 
 export class TelevisionSpeakerHandler {

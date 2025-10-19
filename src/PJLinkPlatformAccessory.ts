@@ -7,7 +7,7 @@ import {InformationHandler} from './InformationHandler';
 import {InputSourceHandler} from './InputSourceHandler';
 import {TelevisionSpeakerHandler} from './TelevisionSpeakerHandler';
 // import {PJLink} from 'PJLink';
-const PJLink = require('pjlink');
+const PJLink = require('@daveralph/pjlink');
 
 export class PJLinkPlatformAccessory {
   private readonly name: string;
