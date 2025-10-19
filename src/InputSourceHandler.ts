@@ -49,7 +49,7 @@ export class InputSourceHandler {
       .onSet(this.setActiveIdentifier.bind(this));
   }
 
-  private getInputSources(configured) {
+  private getInputSources(configured: Input[] | undefined): void {
     if (configured) {
       for (let i = 0; i < configured.length; i++) {
         configured[i].code =
@@ -95,7 +95,7 @@ export class InputSourceHandler {
         this.accessory.getService(identifier) ||
         this.accessory.addService(Service.InputSource, identifier, inputName);
 
-      const inputType = this.mapInputType(input.source);
+      const inputType = this.mapInputType(typeof input.source === 'number' ? input.source : parseInt(input.source, 10));
 
       inputSource
         .setCharacteristic(Characteristic.ConfiguredName, inputName)
@@ -129,7 +129,7 @@ export class InputSourceHandler {
 
   private async getActiveIdentifier(): Promise<CharacteristicValue> {
     this.log.info('get active identifier', this.activeIdentifier);
-    return this.activeIdentifier || this.defaultInput;
+    return this.activeIdentifier ?? '';
   }
 
   private async setActiveIdentifier(
@@ -197,7 +197,7 @@ export class InputSourceHandler {
     }
   }
 
-  private mapInputType(type): CharacteristicValue {
+  private mapInputType(type: number): CharacteristicValue {
     // hap
     const Characteristic = this.api.hap.Characteristic;
 

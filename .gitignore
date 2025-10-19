@@ -63,3 +63,7 @@ typings/
 dist
 .homebridge
 .idea
+
+# Prevent duplicate downloaded repositories
+*-master/
+*.zip

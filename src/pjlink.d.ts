@@ -19,7 +19,7 @@ declare class PJLink {
   getInputs(cb: (error?: string, inputs?: Input[]) => void): void;
 
   // mute
-  setMute(val, cb: (error?: string) => void): void;
+  setMute(val: boolean, cb: (error?: string, resp?: unknown) => void): void;
   getMute(cb: (error?: string, state?: MuteState) => void): void;
 
   // error
@@ -59,11 +59,11 @@ declare enum PowerState {
 }
 
 declare class InputValues {
-  RGB; // = 1;
-  VIDEO; // = 2;
-  DIGITAL; // = 3;
-  STORAGE; // = 4;
-  NETWORK; // = 5;
+  RGB: number; // = 1;
+  VIDEO: number; // = 2;
+  DIGITAL: number; // = 3;
+  STORAGE: number; // = 4;
+  NETWORK: number; // = 5;
 }
 
 declare interface Input {

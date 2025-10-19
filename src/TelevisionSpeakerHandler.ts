@@ -5,9 +5,9 @@ import type {
   PlatformAccessory,
   Service,
 } from 'homebridge';
-import {PJLink} from 'pjlink';
+// import {PJLink} from 'pjlink';
+const PJLink = require('pjlink');
 import {CharacteristicEventTypes} from 'homebridge';
-// const PJLink = require('PJLink');
 
 export class TelevisionSpeakerHandler {
   private readonly speakerService: Service;
@@ -56,7 +56,7 @@ export class TelevisionSpeakerHandler {
   private async getTelevisionMuted(): Promise<CharacteristicValue> {
     return new Promise((resolve, reject) => {
       try {
-        this.device.getMute((err: string | undefined, state: MuteState) => {
+        this.device.getMute((err: string | undefined, state?: MuteState) => {
           if (err) {
             // Silently ignore "Unavailable time" errors when device is off
             if (err.includes('Unavailable time')) {
@@ -67,7 +67,7 @@ export class TelevisionSpeakerHandler {
             }
           } else {
             this.log.info('muted', state);
-            resolve(state.audio);
+            resolve(state?.audio ?? false);
           }
         });
       } catch (e) {
@@ -85,7 +85,7 @@ export class TelevisionSpeakerHandler {
     return new Promise((resolve, reject) => {
       try {
         const muted = value === true;
-        this.device.setMute(muted, (err: string | undefined, resp) => {
+        this.device.setMute(muted, (err: string | undefined, resp?: unknown) => {
           this.log.info('setMute', muted, err, resp);
           if (err) {
             // Silently ignore "Unavailable time" errors when device is off
@@ -111,7 +111,7 @@ export class TelevisionSpeakerHandler {
     const Characteristic = this.api.hap.Characteristic;
 
     try {
-      this.device.getMute((err: string | undefined, state: MuteState) => {
+      this.device.getMute((err: string | undefined, state?: MuteState) => {
         if (err) {
           // Silently ignore "Unavailable time" errors when device is off
           if (!err.includes('Unavailable time')) {
@@ -119,7 +119,7 @@ export class TelevisionSpeakerHandler {
           }
         } else {
           this.log.info('muted', state);
-          if (state.audio !== this.muted) {
+          if (state && state.audio !== this.muted) {
             this.muted = state.audio;
             this.speakerService.updateCharacteristic(
               Characteristic.Mute,
