@@ -89,8 +89,18 @@ export class TelevisionHandler {
       try {
         this.device.getPowerState((error: string | undefined, state) => {
           if (error) {
+<<<<<<< HEAD
             this.log.error(error);
             reject(new Error(error));
+=======
+            // Silently ignore "Unavailable time" errors when device is off
+            if (error.includes('Unavailable time')) {
+              resolve(this.deviceActive);
+            } else {
+              this.log.error(error);
+              reject(new Error(error));
+            }
+>>>>>>> origin/main
           } else {
             this.deviceActive = state === PJLink.POWER.ON;
             this.log.info('television active', this.deviceActive);
@@ -123,7 +133,16 @@ export class TelevisionHandler {
         this.device.setPowerState(powerState, (error?: string) => {
           this.log.info('setPowerState', value, powerState, error);
           if (error) {
+<<<<<<< HEAD
             reject(new Error(error));
+=======
+            // Silently ignore "Unavailable time" errors when device is off
+            if (error.includes('Unavailable time')) {
+              resolve();
+            } else {
+              reject(new Error(error));
+            }
+>>>>>>> origin/main
           } else {
             this.deviceActive = powerState === PJLink.POWER.ON;
             this.tvService.updateCharacteristic(
